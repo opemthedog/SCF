@@ -23,7 +23,7 @@
       </div>
       <div class="col-md">
         <label>執行天數</label>
-        <input class="form-control" id="Days" type="text" value="30" placeholder="30">
+        <input class="form-control" id="Days" type="text" value="300" placeholder="30">
       </div>
       <div class="col-md">
         <label>複利</label>
@@ -33,10 +33,17 @@
         </select>
       </div>
       <div class="col-md">
-        <label>利息大於等於多少再投入</label>
+        <label>全部投入</label>
+        <select class="form-control" id="AllIn">
+          <option value="Y" selected>是</option>
+          <option value="N">否</option>
+        </select>
+      </div>
+      <div class="col-md" style="display: none;">
+        <label>利息大於多少再投入</label>
         <input class="form-control" id="ReinvestAmount" type="text" value="100" placeholder="100">
       </div>
-      <div class="col-md">
+      <div class="col-md" style="display: none;">
         <label>複投金額</label>
         <input class="form-control" id="CompoundInterestAmount" type="text" value="100" placeholder="100">
       </div>
@@ -102,15 +109,34 @@
   <script src="Js/TopScript"></script>
   <script>
     $(function () {
+      $(document).keypress(function (e) {
+        // 检查按下的键是否是Enter键（keyCode 13）
+        if (e.keyCode === 13) {
+          // 在这里调用你要触发的函数
+          $("#Search").click();
+        }
+      });
       $("#IsCompoundInterest").on("change", function () {
         var selectCompoundInterest = $(this).val();
         if (selectCompoundInterest == "Y") {
-          $("#ReinvestAmount").parent().css("display", "block");
-          $("#CompoundInterestAmount").parent().css("display", "block");
+          $("#AllIn").parent().css("display", "block");
+          $("#AllIn").change();
         }
         else {
+          $("#AllIn").parent().css("display", "none");
           $("#ReinvestAmount").parent().css("display", "none");
           $("#CompoundInterestAmount").parent().css("display", "none");
+        }
+      })
+      $("#AllIn").on("change", function () {
+        var selectAllIn = $(this).val();
+        if (selectAllIn == "Y") {
+          $("#ReinvestAmount").parent().css("display", "none");
+          $("#CompoundInterestAmount").parent().css("display", "none");
+        }
+        else {
+          $("#ReinvestAmount").parent().css("display", "block");
+          $("#CompoundInterestAmount").parent().css("display", "block");
         }
       })
       $("#Search").on("click", function () {
@@ -123,6 +149,7 @@
       var Amount = $("#Amount").val();
       var Days = $("#Days").val();
       var IsCompoundInterest = $("#IsCompoundInterest").val();
+      var AllIn = $("#AllIn").val();
       var ReinvestAmount = $("#ReinvestAmount").val();
       var CompoundInterestAmount = $("#CompoundInterestAmount").val();
       var Fee = $("#Fee").val();
@@ -142,16 +169,28 @@
           strHtml += "<td>" + Day + "</td>";
           strHtml += "<td>" + parseFloat(Amount).toFixed(2) + "</td>";
           strHtml += "<td>" + InterestAmount.toFixed(2) + "</td>";
-          if (InterestAmount >= ReinvestAmount) {
-            InterestAmount -= CompoundInterestAmount;
-            const getExtractAmount = (InterestAmount - (InterestAmount * Fee / 100) - parseFloat(MineFee)).toFixed(2);
-            strHtml += "<td>" + getExtractAmount + "</td>";
-            totalExtractAmount = (parseFloat(totalExtractAmount) + parseFloat(getExtractAmount)).toFixed(2);
-            Amount = (parseFloat(Amount) + parseFloat(CompoundInterestAmount)).toFixed(2);
-            InterestAmount = 0;
-          }
-          else {
-            strHtml += "<td></td>"
+          if (AllIn == "Y") {
+            if (InterestAmount >= ReinvestAmount) {
+              // const getExtractAmount = (InterestAmount - (InterestAmount * Fee / 100) - parseFloat(MineFee)).toFixed(2);
+              strHtml += "<td>全投入</td>"
+              // totalExtractAmount = (parseFloat(totalExtractAmount) + parseFloat(getExtractAmount)).toFixed(2);
+              Amount = (parseFloat(Amount) + parseFloat(InterestAmount)).toFixed(2);
+              InterestAmount = 0;
+            } else {
+              strHtml += "<td></td>"
+            }
+          } else {
+            if (InterestAmount >= ReinvestAmount) {
+              InterestAmount -= CompoundInterestAmount;
+              const getExtractAmount = (InterestAmount - (InterestAmount * Fee / 100) - parseFloat(MineFee)).toFixed(2);
+              strHtml += "<td>" + getExtractAmount + "</td>";
+              totalExtractAmount = (parseFloat(totalExtractAmount) + parseFloat(getExtractAmount)).toFixed(2);
+              Amount = (parseFloat(Amount) + parseFloat(CompoundInterestAmount)).toFixed(2);
+              InterestAmount = 0;
+            }
+            else {
+              strHtml += "<td></td>"
+            }
           }
         }
         else if (IsCompoundInterest == "N") {
